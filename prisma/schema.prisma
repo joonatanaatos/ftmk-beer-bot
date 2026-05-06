@@ -12,11 +12,23 @@ datasource db {
   provider = "postgresql"
 }
 
+enum DrinkType {
+  BEER
+  DRINK
+  SHOT
+  ICE_CREAM
+}
+
+model DrinkEntry {
+  id        Int       @id @default(autoincrement())
+  userId    String
+  user      User      @relation(fields: [userId], references: [telegramId])
+  type      DrinkType
+  createdAt DateTime  @default(now())
+}
+
 model User {
-  telegramId String @id
+  telegramId String       @id
   username   String
-  beerCount     Int @default(0)
-  drinkCount    Int @default(0)
-  shotCount     Int @default(0)
-  iceCreamCount Int @default(0)
+  entries    DrinkEntry[]
 }

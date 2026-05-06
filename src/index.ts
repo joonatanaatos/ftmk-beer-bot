@@ -9,6 +9,30 @@ const PRICES = {
   ICE_CREAM: 2,
 };
 
+const MOTIVATIONAL_MESSAGES = [
+  "Jatka samaan malliin! 🍻",
+  "Olet todellinen taistelija! 🥳",
+  "Uuteen nousuun! 🚀",
+  "Jokainen kalja lasketaan! 🍻",
+  "JESSSS! 💯",
+  "Huhhuh, mikä saldo! 😎",
+  "Onnistut paremmin kuin muut! 🌟",
+  "Pidä hyvä tahti yllä! 🏃‍♂️",
+  "Olet todellinen kaljaguru! 🍺",
+  "Jokainen drinkki on drinkki kohti voittoa! 🍹",
+  "Shotti päivässä pitää rapakon loitolla! 🥃",
+  "Älä anna krapulan iskeä! 🍦",
+  "Et tuota Daddylle pettymystä! 👑",
+  "Taas mennään! 🚀",
+  "Kellota! ⏱️",
+  "Juot kuin koneteekkari! 🤖",
+  "Tämä on elämäntapa! 🌈",
+  "Olet FTMK:n ylpeys! 🎓",
+  "Näytä niille fukseille! 💪",
+  "Iuventus in aeternum! 🎓",
+  "Näytä muna! 🍆",
+];
+
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 
 if (!TG_BOT_TOKEN) {
@@ -39,6 +63,22 @@ async function ensureUser(telegramId: string, username: string) {
   });
 }
 
+async function sendMotivationalMessage(ctx: any) {
+  const message =
+    MOTIVATIONAL_MESSAGES[
+      Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)
+    ];
+  await ctx.reply(message);
+}
+
+async function respondToEntry(ctx: any, message: string) {
+  if (Math.random() < 0.25) {
+    await sendMotivationalMessage(ctx);
+  } else {
+    await ctx.reply(message);
+  }
+}
+
 bot.command("kalja", async (ctx) => {
   const telegramId = ctx.from!.id.toString();
   await ensureUser(telegramId, ctx.from!.username ?? "unknown");
@@ -48,7 +88,7 @@ bot.command("kalja", async (ctx) => {
   const count = await prisma.drinkEntry.count({
     where: { userId: telegramId, type: "BEER" },
   });
-  await ctx.reply(`Kalja kirjattu! Yhteensä: ${count} 🍺`);
+  await respondToEntry(ctx, `Kalja kirjattu! Yhteensä: ${count} 🍺`);
 });
 
 bot.command("drinkki", async (ctx) => {
@@ -60,7 +100,7 @@ bot.command("drinkki", async (ctx) => {
   const count = await prisma.drinkEntry.count({
     where: { userId: telegramId, type: "DRINK" },
   });
-  await ctx.reply(`Drinkki kirjattu! Yhteensä: ${count} 🍹`);
+  await respondToEntry(ctx, `Drinkki kirjattu! Yhteensä: ${count} 🍹`);
 });
 
 bot.command("shotti", async (ctx) => {
@@ -72,7 +112,7 @@ bot.command("shotti", async (ctx) => {
   const count = await prisma.drinkEntry.count({
     where: { userId: telegramId, type: "SHOT" },
   });
-  await ctx.reply(`Shotti kirjattu! Yhteensä: ${count} 🥃`);
+  await respondToEntry(ctx, `Shotti kirjattu! Yhteensä: ${count} 🥃`);
 });
 
 bot.command("jatski", async (ctx) => {
@@ -84,7 +124,7 @@ bot.command("jatski", async (ctx) => {
   const count = await prisma.drinkEntry.count({
     where: { userId: telegramId, type: "ICE_CREAM" },
   });
-  await ctx.reply(`Jätski kirjattu! Yhteensä: ${count} 🍦`);
+  await respondToEntry(ctx, `Jätski kirjattu! Yhteensä: ${count} 🍦`);
 });
 
 bot.command("stats", async (ctx) => {
@@ -229,7 +269,6 @@ bot.command("rappio", async (ctx) => {
       const iceCreams = user.entries.filter(
         (e) => e.type === "ICE_CREAM",
       ).length;
-      const total = beers + drinks + shots + iceCreams;
       const euros = calcEuros(beers, drinks, shots, iceCreams);
       return {
         username: user.username,
@@ -237,14 +276,13 @@ bot.command("rappio", async (ctx) => {
         drinks,
         shots,
         iceCreams,
-        total,
         euros,
       };
     })
     .sort((a, b) => b.euros - a.euros)
     .map(
-      ({ username, beers, drinks, shots, iceCreams, total, euros }, i) =>
-        `<b>${i + 1}. ${username}</b>\n🍺 ${beers} | 🍹 ${drinks} | 🥃 ${shots} | 🍦 ${iceCreams} | 📋 ${total} | 💶 ${euros}€`,
+      ({ username, beers, drinks, shots, iceCreams, euros }, i) =>
+        `<b>${i + 1}. ${username}</b>\n🍺 ${beers} | 🍹 ${drinks} | 🥃 ${shots} | 🍦 ${iceCreams} | 💶 ${euros}€`,
     );
 
   await ctx.reply(`📊 Rappio-tilastot:\n\n${rows.join("\n\n")}`, {

@@ -2,6 +2,13 @@ import { Bot, InputFile } from "grammy";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { prisma } from "./prisma";
 
+const PRICES = {
+  BEER: 4,
+  DRINK: 5,
+  SHOT: 3,
+  ICE_CREAM: 2,
+};
+
 const TG_BOT_TOKEN = process.env.TG_BOT_TOKEN;
 
 if (!TG_BOT_TOKEN) {
@@ -9,6 +16,20 @@ if (!TG_BOT_TOKEN) {
 }
 
 const bot = new Bot(TG_BOT_TOKEN);
+
+function calcEuros(
+  beers: number,
+  drinks: number,
+  shots: number,
+  iceCreams: number,
+) {
+  return (
+    beers * PRICES.BEER +
+    drinks * PRICES.DRINK +
+    shots * PRICES.SHOT +
+    iceCreams * PRICES.ICE_CREAM
+  );
+}
 
 async function ensureUser(telegramId: string, username: string) {
   await prisma.user.upsert({
@@ -83,8 +104,9 @@ bot.command("stats", async (ctx) => {
       where: { userId: telegramId, type: "ICE_CREAM" },
     }),
   ]);
+  const euros = calcEuros(beers, drinks, shots, iceCreams);
   await ctx.reply(
-    `📊 Käyttäjän ${user.username} tilastot:\n🍺 Kaljat: ${beers}\n🍹 Drinkit: ${drinks}\n🥃 Shotit: ${shots}\n🍦 Jätskitykset: ${iceCreams}`,
+    `📊 Käyttäjän ${user.username} tilastot:\n🍺 Kaljat: ${beers}\n🍹 Drinkit: ${drinks}\n🥃 Shotit: ${shots}\n🍦 Jätskitykset: ${iceCreams}\n💶 Yhteensä: ${euros}€`,
   );
 });
 
@@ -118,20 +140,25 @@ bot.command("kuvaaja", async (ctx) => {
     const uid = entry.userId;
     usernames.set(uid, entry.user.username);
     if (!byUser.has(uid)) byUser.set(uid, []);
+    const price = PRICES[entry.type as keyof typeof PRICES] ?? 0;
     const points = byUser.get(uid)!;
     const last = points[points.length - 1];
     const prev = last !== undefined ? last.y : 0;
-    points.push({ x: entry.createdAt.getTime(), y: prev + 1 });
+    points.push({ x: entry.createdAt.getTime(), y: prev + price });
   }
 
-  const datasets = Array.from(byUser.entries()).map(([uid, points], i) => ({
-    label: usernames.get(uid) ?? uid,
-    data: points,
-    borderColor: COLORS[i % COLORS.length],
-    backgroundColor: "transparent",
-    stepped: "before" as const,
-    pointRadius: 3,
-  }));
+  const datasets = Array.from(byUser.entries())
+    .sort(
+      ([, a], [, b]) => (b[b.length - 1]?.y ?? 0) - (a[a.length - 1]?.y ?? 0),
+    )
+    .map(([uid, points], i) => ({
+      label: usernames.get(uid) ?? uid,
+      data: points,
+      borderColor: COLORS[i % COLORS.length],
+      backgroundColor: "transparent",
+      stepped: "before" as const,
+      pointRadius: 3,
+    }));
 
   const renderer = new ChartJSNodeCanvas({
     width: 900,
@@ -153,7 +180,7 @@ bot.command("kuvaaja", async (ctx) => {
         y: {
           beginAtZero: true,
           ticks: { stepSize: 1 },
-          title: { display: true, text: "Yhteensä" },
+          title: { display: true, text: "Dokattu summa (€)" },
         },
       },
     },
@@ -184,6 +211,47 @@ bot.command("eiku", async (ctx) => {
   );
 });
 
+bot.command("rappio", async (ctx) => {
+  const users = await prisma.user.findMany({
+    include: { entries: true },
+  });
+
+  if (users.length === 0) {
+    await ctx.reply("Ei vielä kirjauksia!");
+    return;
+  }
+
+  const rows = users
+    .map((user) => {
+      const beers = user.entries.filter((e) => e.type === "BEER").length;
+      const drinks = user.entries.filter((e) => e.type === "DRINK").length;
+      const shots = user.entries.filter((e) => e.type === "SHOT").length;
+      const iceCreams = user.entries.filter(
+        (e) => e.type === "ICE_CREAM",
+      ).length;
+      const total = beers + drinks + shots + iceCreams;
+      const euros = calcEuros(beers, drinks, shots, iceCreams);
+      return {
+        username: user.username,
+        beers,
+        drinks,
+        shots,
+        iceCreams,
+        total,
+        euros,
+      };
+    })
+    .sort((a, b) => b.euros - a.euros)
+    .map(
+      ({ username, beers, drinks, shots, iceCreams, total, euros }, i) =>
+        `<b>${i + 1}. ${username}</b>\n🍺 ${beers} | 🍹 ${drinks} | 🥃 ${shots} | 🍦 ${iceCreams} | 📋 ${total} | 💶 ${euros}€`,
+    );
+
+  await ctx.reply(`📊 Rappio-tilastot:\n\n${rows.join("\n\n")}`, {
+    parse_mode: "HTML",
+  });
+});
+
 // Set up command menu
 await bot.api.setMyCommands([
   { command: "kalja", description: "Merkitse kalja 🍺" },
@@ -191,8 +259,9 @@ await bot.api.setMyCommands([
   { command: "shotti", description: "Merkitse shotti 🥃" },
   { command: "jatski", description: "Merkitse jätski 🍦" },
   { command: "stats", description: "Näytä omat tilastot 📊" },
-  { command: "kuvaaja", description: "Näyttää kaavion 📈" },
+  { command: "kuvaaja", description: "Näyttä kaavio 📈" },
   { command: "eiku", description: "Poista viimeisin kirjaus" },
+  { command: "rappio", description: "Näytä kaikkien tilastot 📊" },
 ]);
 
 bot.start();

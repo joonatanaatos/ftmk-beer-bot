@@ -7,12 +7,14 @@ export function calcEuros(
   drinks: number,
   shots: number,
   iceCreams: number,
+  wines: number,
 ) {
   return (
     beers * PRICES.BEER +
     drinks * PRICES.DRINK +
     shots * PRICES.SHOT +
-    iceCreams * PRICES.ICE_CREAM
+    iceCreams * PRICES.ICE_CREAM +
+    wines * PRICES.WINE
   );
 }
 

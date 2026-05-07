@@ -32,6 +32,7 @@ export const COMMAND_MENU = [
   { command: "drinkki", description: "Merkitse drinkki 🍹" },
   { command: "shotti", description: "Merkitse shotti 🥃" },
   { command: "jatski", description: "Merkitse jätski 🍦" },
+  { command: "viini", description: "Merkitse viini 🍷" },
   { command: "stats", description: "Näytä omat tilastot 📊" },
   { command: "kuvaaja", description: "Näyttä kaavio 📈" },
   { command: "eiku", description: "Poista viimeisin kirjaus" },

@@ -17,6 +17,7 @@ enum DrinkType {
   DRINK
   SHOT
   ICE_CREAM
+  WINE
 }
 
 model DrinkEntry {

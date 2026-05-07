@@ -7,6 +7,7 @@ export const PRICES: Record<DrinkType, number> = {
   DRINK: 5,
   SHOT: 3,
   ICE_CREAM: 2,
+  WINE: 4,
 };
 
 export const DRINK_EMOJI: Record<DrinkType, string> = {
@@ -14,6 +15,7 @@ export const DRINK_EMOJI: Record<DrinkType, string> = {
   DRINK: "🍹",
   SHOT: "🥃",
   ICE_CREAM: "🍦",
+  WINE: "🍷",
 };
 
 export const MOTIVATIONAL_MESSAGES = [

@@ -8,6 +8,7 @@ const DRINKS: { command: string; type: DrinkType; label: string }[] = [
   { command: "drinkki", type: "DRINK", label: "Drinkki" },
   { command: "shotti", type: "SHOT", label: "Shotti" },
   { command: "jatski", type: "ICE_CREAM", label: "Jätski" },
+  { command: "viini", type: "WINE", label: "Viini" },
 ];
 
 export function registerDrinkCommands(bot: Bot) {

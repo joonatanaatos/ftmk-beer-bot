@@ -3,8 +3,9 @@ import { COMMAND_MENU } from "./index";
 
 export function registerStartCommand(bot: Bot) {
   bot.command("start", async (ctx) => {
-    const commandList = COMMAND_MENU
-      .filter(({ command }) => command !== "start")
+    const commandList = COMMAND_MENU.filter(
+      ({ command }) => command !== "start",
+    )
       .map(({ command, description }) => `/${command} – ${description}`)
       .join("\n");
 

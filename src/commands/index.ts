@@ -14,7 +14,9 @@ export function registerCommands(bot: Bot) {
       const username = ctx.from?.username ?? "no-username";
       const chatId = ctx.chat?.id ?? "unknown";
       const chatType = ctx.chat?.type ?? "unknown";
-      logger.info(`command=${command} user=${username}(${userId}) chat=${chatId}(${chatType})`);
+      logger.info(
+        `command=${command} user=${username}(${userId}) chat=${chatId}(${chatType})`,
+      );
     }
     await next();
   });
@@ -37,4 +39,5 @@ export const COMMAND_MENU = [
   { command: "kuvaaja", description: "Näyttä kaavio 📈" },
   { command: "eiku", description: "Poista viimeisin kirjaus" },
   { command: "rappio", description: "Näytä kaikkien tilastot 📊" },
+  { command: "daystats", description: "Näytä päivätilastot 📅" },
 ];

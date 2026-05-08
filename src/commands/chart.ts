@@ -31,8 +31,7 @@ export function registerChartCommand(bot: Bot) {
 
     const datasets = Array.from(byUser.entries())
       .sort(
-        ([, a], [, b]) =>
-          (b[b.length - 1]?.y ?? 0) - (a[a.length - 1]?.y ?? 0),
+        ([, a], [, b]) => (b[b.length - 1]?.y ?? 0) - (a[a.length - 1]?.y ?? 0),
       )
       .map(([uid, points], i) => ({
         label: usernames.get(uid) ?? uid,

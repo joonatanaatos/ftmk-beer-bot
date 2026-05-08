@@ -23,7 +23,7 @@ export function registerStatsCommands(bot: Bot) {
     ]);
     const euros = calcEuros(beers, drinks, shots, iceCreams, wines);
     await ctx.reply(
-      `📊 Käyttäjän ${user.username} tilastot:\n🍺 Kaljat: ${beers}\n🍹 Drinkit: ${drinks}\n🥃 Shotit: ${shots}\n🍦 Jätskitykset: ${iceCreams}\n🍷 Viinit: ${wines}\n💶 Yhteensä: ${euros}€`,
+      `📊 Käyttäjän ${user.username} tilastot:\n🍺 Kaljat: ${beers}\n🍹 Drinkit: ${drinks}\n🥃 Shotit: ${shots}\n🍷 Viinit: ${wines}\n🍦 Jätskitykset: ${iceCreams}\n💶 Yhteensä: ${euros}€`,
     );
   });
 
@@ -96,7 +96,7 @@ export function registerStatsCommands(bot: Bot) {
           day.wines,
         );
         const label = dayLabelFormatter.format(day.date);
-        return `<b>${label}</b>\n🍺 ${day.beers} | 🍹 ${day.drinks} | 🥃 ${day.shots} | 🍦 ${day.iceCreams} | 🍷 ${day.wines} | 💶 ${euros}€`;
+        return `<b>${label}</b>\n🍺 ${day.beers} | 🍹 ${day.drinks} | 🥃 ${day.shots} | 🍷 ${day.wines} | 🍦 ${day.iceCreams} | 💶 ${euros}€`;
       });
 
     await ctx.reply(`📅 Päivätilastot:\n\n${rows.join("\n\n")}`, {
@@ -137,7 +137,7 @@ export function registerStatsCommands(bot: Bot) {
       .sort((a, b) => b.euros - a.euros)
       .map(
         ({ username, beers, drinks, shots, iceCreams, wines, euros }, i) =>
-          `<b>${i + 1}. ${username}</b>\n🍺 ${beers} | 🍹 ${drinks} | 🥃 ${shots} | 🍦 ${iceCreams} | 🍷 ${wines} | 💶 ${euros}€`,
+          `<b>${i + 1}. ${username}</b>\n🍺 ${beers} | 🍹 ${drinks} | 🥃 ${shots} | 🍷 ${wines} | 🍦 ${iceCreams} | 💶 ${euros}€`,
       );
 
     await ctx.reply(`📊 Rappio-tilastot:\n\n${rows.join("\n\n")}`, {

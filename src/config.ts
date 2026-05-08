@@ -5,8 +5,8 @@ export { DrinkType } from "./generated/prisma/enums";
 export const PRICES: Record<DrinkType, number> = {
   BEER: 4,
   DRINK: 5,
-  SHOT: 3,
-  ICE_CREAM: 2,
+  SHOT: 4,
+  ICE_CREAM: 1,
   WINE: 4,
 };
 

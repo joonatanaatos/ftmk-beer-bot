@@ -1,6 +1,10 @@
 import type { Context } from "grammy";
 import { prisma } from "./prisma";
-import { MOTIVATIONAL_MESSAGES, PRICES } from "./config";
+import { MOTIVATIONAL_MESSAGES, PRICES, TIME_OFFSET_MS } from "./config";
+
+export function shiftForOutput(date: Date): Date {
+  return new Date(date.getTime() + TIME_OFFSET_MS);
+}
 
 export function calcEuros(
   beers: number,

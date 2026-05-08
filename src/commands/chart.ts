@@ -2,6 +2,7 @@ import { type Bot, InputFile } from "grammy";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { prisma } from "../prisma";
 import { COLORS, PRICES, type DrinkType } from "../config";
+import { shiftForOutput } from "../helpers";
 
 export function registerChartCommand(bot: Bot) {
   bot.command("kuvaaja", async (ctx) => {
@@ -26,7 +27,10 @@ export function registerChartCommand(bot: Bot) {
       const points = byUser.get(uid)!;
       const last = points[points.length - 1];
       const prev = last !== undefined ? last.y : 0;
-      points.push({ x: entry.createdAt.getTime(), y: prev + price });
+      points.push({
+        x: shiftForOutput(entry.createdAt).getTime(),
+        y: prev + price,
+      });
     }
 
     const datasets = Array.from(byUser.entries())

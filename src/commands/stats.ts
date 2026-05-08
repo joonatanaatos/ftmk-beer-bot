@@ -1,6 +1,6 @@
 import type { Bot } from "grammy";
 import { prisma } from "../prisma";
-import { calcEuros } from "../helpers";
+import { calcEuros, shiftForOutput } from "../helpers";
 
 export function registerStatsCommands(bot: Bot) {
   bot.command("stats", async (ctx) => {
@@ -63,7 +63,8 @@ export function registerStatsCommands(bot: Bot) {
     >();
 
     for (const entry of entries) {
-      const shifted = new Date(entry.createdAt.getTime() - 5 * 60 * 60 * 1000);
+      const adjusted = shiftForOutput(entry.createdAt);
+      const shifted = new Date(adjusted.getTime() - 5 * 60 * 60 * 1000);
       const key = dayKeyFormatter.format(shifted);
       let day = byDay.get(key);
       if (!day) {

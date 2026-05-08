@@ -2,6 +2,11 @@ import type { DrinkType } from "./generated/prisma/enums";
 
 export { DrinkType } from "./generated/prisma/enums";
 
+const rawOffset = process.env["TIME_OFFSET_HOURS"];
+const parsedOffset = rawOffset !== undefined ? Number(rawOffset) : 0;
+export const TIME_OFFSET_MS =
+  (Number.isFinite(parsedOffset) ? parsedOffset : 0) * 60 * 60 * 1000;
+
 export const PRICES: Record<DrinkType, number> = {
   BEER: 4,
   DRINK: 5,

@@ -29,6 +29,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-ftmk_beer}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
+      TIME_OFFSET_HOURS: ${TIME_OFFSET_HOURS:-0}
 
 volumes:
   postgres_data:

@@ -38,7 +38,7 @@ export function registerStatsCommands(bot: Bot) {
     }
 
     const dayKeyFormatter = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: "Europe/Helsinki",
+      timeZone: "UTC",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -64,7 +64,7 @@ export function registerStatsCommands(bot: Bot) {
 
     for (const entry of entries) {
       const adjusted = shiftForOutput(entry.createdAt);
-      const shifted = new Date(adjusted.getTime() - 5 * 60 * 60 * 1000);
+      const shifted = new Date(adjusted.getTime() - 6 * 60 * 60 * 1000);
       const key = dayKeyFormatter.format(shifted);
       let day = byDay.get(key);
       if (!day) {

@@ -30,6 +30,7 @@ services:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"
       TIME_OFFSET_HOURS: ${TIME_OFFSET_HOURS:-0}
+      IS_ACTIVE: ${IS_ACTIVE:-true}
 
 volumes:
   postgres_data:

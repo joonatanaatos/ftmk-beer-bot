@@ -5,6 +5,16 @@ import { registerChartCommand } from "./chart";
 import { registerUndoCommand } from "./undo";
 import { registerStartCommand } from "./start";
 import { logger } from "../logger";
+import { IS_ACTIVE } from "../config";
+
+const WRITE_COMMANDS = new Set([
+  "kalja",
+  "drinkki",
+  "shotti",
+  "jatski",
+  "viini",
+  "eiku",
+]);
 
 export function registerCommands(bot: Bot) {
   bot.use(async (ctx, next) => {
@@ -17,6 +27,22 @@ export function registerCommands(bot: Bot) {
       logger.info(
         `command=${command} user=${username}(${userId}) chat=${chatId}(${chatType})`,
       );
+    }
+    await next();
+  });
+
+  bot.use(async (ctx, next) => {
+    if (IS_ACTIVE) {
+      await next();
+      return;
+    }
+    const text = ctx.message?.text;
+    if (text?.startsWith("/")) {
+      const cmd = text.slice(1).split(/[\s@]/)[0] ?? "";
+      if (WRITE_COMMANDS.has(cmd)) {
+        await ctx.reply("Loma loppu jo bro 🤨");
+        return;
+      }
     }
     await next();
   });

@@ -7,6 +7,9 @@ const parsedOffset = rawOffset !== undefined ? Number(rawOffset) : 0;
 export const TIME_OFFSET_MS =
   (Number.isFinite(parsedOffset) ? parsedOffset : 0) * 60 * 60 * 1000;
 
+const rawIsActive = process.env["IS_ACTIVE"];
+export const IS_ACTIVE = rawIsActive !== "false";
+
 export const PRICES: Record<DrinkType, number> = {
   BEER: 4,
   DRINK: 5,

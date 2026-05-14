@@ -1,6 +1,89 @@
-import type { Bot } from "grammy";
+import type { Bot, Context } from "grammy";
+import type { Prisma } from "../generated/prisma/client";
 import { prisma } from "../prisma";
 import { calcEuros, shiftForOutput } from "../helpers";
+
+async function replyWithDayStats(
+  ctx: Context,
+  where: Prisma.DrinkEntryWhereInput,
+  title: string,
+) {
+  const entries = await prisma.drinkEntry.findMany({
+    where,
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (entries.length === 0) {
+    await ctx.reply("Ei vielä kirjauksia!");
+    return;
+  }
+
+  const dayKeyFormatter = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const dayLabelFormatter = new Intl.DateTimeFormat("fi-FI", {
+    timeZone: "Europe/Helsinki",
+    day: "numeric",
+    month: "numeric",
+    year: "numeric",
+  });
+
+  const byDay = new Map<
+    string,
+    {
+      date: Date;
+      beers: number;
+      drinks: number;
+      shots: number;
+      iceCreams: number;
+      wines: number;
+    }
+  >();
+
+  for (const entry of entries) {
+    const adjusted = shiftForOutput(entry.createdAt);
+    const shifted = new Date(adjusted.getTime() - 6 * 60 * 60 * 1000);
+    const key = dayKeyFormatter.format(shifted);
+    let day = byDay.get(key);
+    if (!day) {
+      day = {
+        date: shifted,
+        beers: 0,
+        drinks: 0,
+        shots: 0,
+        iceCreams: 0,
+        wines: 0,
+      };
+      byDay.set(key, day);
+    }
+    if (entry.type === "BEER") day.beers++;
+    else if (entry.type === "DRINK") day.drinks++;
+    else if (entry.type === "SHOT") day.shots++;
+    else if (entry.type === "ICE_CREAM") day.iceCreams++;
+    else if (entry.type === "WINE") day.wines++;
+  }
+
+  const rows = Array.from(byDay.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([, day]) => {
+      const euros = calcEuros(
+        day.beers,
+        day.drinks,
+        day.shots,
+        day.iceCreams,
+        day.wines,
+      );
+      const label = dayLabelFormatter.format(day.date);
+      return `<b>${label}</b>\n🍺 ${day.beers} | 🍹 ${day.drinks} | 🥃 ${day.shots} | 🍷 ${day.wines} | 🍦 ${day.iceCreams} | 💶 ${euros}€`;
+    });
+
+  await ctx.reply(`${title}\n\n${rows.join("\n\n")}`, {
+    parse_mode: "HTML",
+  });
+}
 
 export function registerStatsCommands(bot: Bot) {
   bot.command("stats", async (ctx) => {
@@ -27,81 +110,17 @@ export function registerStatsCommands(bot: Bot) {
     );
   });
 
+  bot.command("mystats", async (ctx) => {
+    const telegramId = ctx.from!.id.toString();
+    await replyWithDayStats(
+      ctx,
+      { userId: telegramId },
+      "📅 Omat päivätilastot:",
+    );
+  });
+
   bot.command("daystats", async (ctx) => {
-    const entries = await prisma.drinkEntry.findMany({
-      orderBy: { createdAt: "asc" },
-    });
-
-    if (entries.length === 0) {
-      await ctx.reply("Ei vielä kirjauksia!");
-      return;
-    }
-
-    const dayKeyFormatter = new Intl.DateTimeFormat("sv-SE", {
-      timeZone: "UTC",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const dayLabelFormatter = new Intl.DateTimeFormat("fi-FI", {
-      timeZone: "Europe/Helsinki",
-      day: "numeric",
-      month: "numeric",
-      year: "numeric",
-    });
-
-    const byDay = new Map<
-      string,
-      {
-        date: Date;
-        beers: number;
-        drinks: number;
-        shots: number;
-        iceCreams: number;
-        wines: number;
-      }
-    >();
-
-    for (const entry of entries) {
-      const adjusted = shiftForOutput(entry.createdAt);
-      const shifted = new Date(adjusted.getTime() - 6 * 60 * 60 * 1000);
-      const key = dayKeyFormatter.format(shifted);
-      let day = byDay.get(key);
-      if (!day) {
-        day = {
-          date: shifted,
-          beers: 0,
-          drinks: 0,
-          shots: 0,
-          iceCreams: 0,
-          wines: 0,
-        };
-        byDay.set(key, day);
-      }
-      if (entry.type === "BEER") day.beers++;
-      else if (entry.type === "DRINK") day.drinks++;
-      else if (entry.type === "SHOT") day.shots++;
-      else if (entry.type === "ICE_CREAM") day.iceCreams++;
-      else if (entry.type === "WINE") day.wines++;
-    }
-
-    const rows = Array.from(byDay.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([, day]) => {
-        const euros = calcEuros(
-          day.beers,
-          day.drinks,
-          day.shots,
-          day.iceCreams,
-          day.wines,
-        );
-        const label = dayLabelFormatter.format(day.date);
-        return `<b>${label}</b>\n🍺 ${day.beers} | 🍹 ${day.drinks} | 🥃 ${day.shots} | 🍷 ${day.wines} | 🍦 ${day.iceCreams} | 💶 ${euros}€`;
-      });
-
-    await ctx.reply(`📅 Päivätilastot:\n\n${rows.join("\n\n")}`, {
-      parse_mode: "HTML",
-    });
+    await replyWithDayStats(ctx, {}, "📅 Päivätilastot:");
   });
 
   bot.command("finalstats", async (ctx) => {

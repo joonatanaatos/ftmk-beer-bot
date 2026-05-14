@@ -40,5 +40,6 @@ export const COMMAND_MENU = [
   { command: "eiku", description: "Poista viimeisin kirjaus" },
   { command: "rappio", description: "Näytä kaikkien tilastot 📊" },
   { command: "daystats", description: "Näytä päivätilastot 📅" },
+  { command: "mystats", description: "Näytä omat päivätilastot 📅" },
   { command: "finalstats", description: "Näytä loppustilastot 🏁" },
 ];

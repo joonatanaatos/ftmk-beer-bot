@@ -104,6 +104,114 @@ export function registerStatsCommands(bot: Bot) {
     });
   });
 
+  bot.command("finalstats", async (ctx) => {
+    const entries = await prisma.drinkEntry.findMany({
+      include: { user: true },
+    });
+
+    if (entries.length === 0) {
+      await ctx.reply("Ei vielä kirjauksia!");
+      return;
+    }
+
+    const dayKeyFormatter = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: "UTC",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    const dayLabelFormatter = new Intl.DateTimeFormat("fi-FI", {
+      timeZone: "Europe/Helsinki",
+      day: "numeric",
+      month: "numeric",
+      year: "numeric",
+    });
+
+    type Totals = {
+      beers: number;
+      drinks: number;
+      shots: number;
+      iceCreams: number;
+      wines: number;
+    };
+    const emptyTotals = (): Totals => ({
+      beers: 0,
+      drinks: 0,
+      shots: 0,
+      iceCreams: 0,
+      wines: 0,
+    });
+    const bumpTotals = (t: Totals, type: string) => {
+      if (type === "BEER") t.beers++;
+      else if (type === "DRINK") t.drinks++;
+      else if (type === "SHOT") t.shots++;
+      else if (type === "ICE_CREAM") t.iceCreams++;
+      else if (type === "WINE") t.wines++;
+    };
+
+    const totals = emptyTotals();
+    const byUser = new Map<string, { username: string } & Totals>();
+    const byDay = new Map<string, { date: Date } & Totals>();
+
+    for (const entry of entries) {
+      bumpTotals(totals, entry.type);
+
+      let userBucket = byUser.get(entry.userId);
+      if (!userBucket) {
+        userBucket = { username: entry.user.username, ...emptyTotals() };
+        byUser.set(entry.userId, userBucket);
+      }
+      bumpTotals(userBucket, entry.type);
+
+      const adjusted = shiftForOutput(entry.createdAt);
+      const shifted = new Date(adjusted.getTime() - 6 * 60 * 60 * 1000);
+      const key = dayKeyFormatter.format(shifted);
+      let dayBucket = byDay.get(key);
+      if (!dayBucket) {
+        dayBucket = { date: shifted, ...emptyTotals() };
+        byDay.set(key, dayBucket);
+      }
+      bumpTotals(dayBucket, entry.type);
+    }
+
+    const eurosOf = (t: Totals) =>
+      calcEuros(t.beers, t.drinks, t.shots, t.iceCreams, t.wines);
+
+    const totalEuros = eurosOf(totals);
+
+    const topSpenders = Array.from(byUser.values())
+      .map((u) => ({ username: u.username, euros: eurosOf(u) }))
+      .sort((a, b) => b.euros - a.euros)
+      .slice(0, 3);
+    const medals = ["🥇", "🥈", "🥉"];
+    const topSpendersList = topSpenders
+      .map((u, i) => `     ${medals[i]} <b>${u.username}</b> (${u.euros}€)`)
+      .join("\n");
+
+    const biggestDay = Array.from(byDay.values()).reduce((best, cur) =>
+      eurosOf(cur) > eurosOf(best) ? cur : best,
+    );
+    const biggestDayEuros = eurosOf(biggestDay);
+    const biggestDayLabel = dayLabelFormatter.format(biggestDay.date);
+
+    await ctx.reply(
+      `🏁 <b>Loppustilastot:</b>
+
+🍺 Kaljat: ${totals.beers}
+🍹 Drinkit: ${totals.drinks}
+🥃 Shotit: ${totals.shots}
+🍷 Viinit: ${totals.wines}
+🍦 Jätskitykset: ${totals.iceCreams}
+💶 <b>Yhteensä: ${totalEuros}€</b>
+
+👑 Eniten kuluttaneet:
+${topSpendersList}
+
+📈 Kovin päivä: <b>${biggestDayLabel}</b> (${biggestDayEuros}€)`,
+      { parse_mode: "HTML" },
+    );
+  });
+
   bot.command("rappio", async (ctx) => {
     const users = await prisma.user.findMany({
       include: { entries: true },

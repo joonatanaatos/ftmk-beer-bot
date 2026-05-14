@@ -112,10 +112,15 @@ export function registerStatsCommands(bot: Bot) {
 
   bot.command("mystats", async (ctx) => {
     const telegramId = ctx.from!.id.toString();
+    const user = await prisma.user.findUnique({ where: { telegramId } });
+    if (!user) {
+      await ctx.reply("Ei vielä kirjauksia!");
+      return;
+    }
     await replyWithDayStats(
       ctx,
       { userId: telegramId },
-      "📅 Omat päivätilastot:",
+      `📅 Käyttäjän ${user.username} päivätilastot:`,
     );
   });
 
@@ -213,20 +218,42 @@ export function registerStatsCommands(bot: Bot) {
     const biggestDayEuros = eurosOf(biggestDay);
     const biggestDayLabel = dayLabelFormatter.format(biggestDay.date);
 
+    const topByType = (key: keyof Totals) => {
+      const ranked = Array.from(byUser.values())
+        .map((u) => ({ username: u.username, count: u[key] }))
+        .filter((u) => u.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 3);
+      if (ranked.length === 0) return "";
+      return (
+        "\n" +
+        ranked
+          .map((u, i) => `     ${medals[i]} ${u.username} (${u.count})`)
+          .join("\n")
+      );
+    };
+
+    const beerTop = topByType("beers");
+    const drinkTop = topByType("drinks");
+    const shotTop = topByType("shots");
+    const wineTop = topByType("wines");
+    const iceCreamTop = topByType("iceCreams");
+
     await ctx.reply(
       `🏁 <b>Loppustilastot:</b>
 
-🍺 Kaljat: ${totals.beers}
-🍹 Drinkit: ${totals.drinks}
-🥃 Shotit: ${totals.shots}
-🍷 Viinit: ${totals.wines}
-🍦 Jätskitykset: ${totals.iceCreams}
-💶 <b>Yhteensä: ${totalEuros}€</b>
-
+🍺 Kaljat: ${totals.beers}${beerTop}\n
+🍹 Drinkit: ${totals.drinks}${drinkTop}\n
+🥃 Shotit: ${totals.shots}${shotTop}\n
+🍷 Viinit: ${totals.wines}${wineTop}\n
+🍦 Jätskitykset: ${totals.iceCreams}${iceCreamTop}
+<b>
+📈 Kovin päivä: ${biggestDayLabel} (${biggestDayEuros}€)
+💶 Reissun aikana yhteensä: ${totalEuros}€
+🍻 Alkoholiannoksia yhteensä: ${totals.beers + totals.drinks + totals.shots + totals.wines}
+</b>
 👑 Eniten kuluttaneet:
-${topSpendersList}
-
-📈 Kovin päivä: <b>${biggestDayLabel}</b> (${biggestDayEuros}€)`,
+${topSpendersList}`,
       { parse_mode: "HTML" },
     );
   });
